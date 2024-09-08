@@ -149,6 +149,7 @@
             <ul id="score-history"></ul>
         </div>
         <audio id="correct-sound" src="right.mp3" preload="auto"></audio>
+        <audio id="incorrect-sound" src="wrong.mp3" preload="auto"></audio>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.0/dist/confetti.browser.min.js"></script>
@@ -175,6 +176,7 @@
         const extraTimeButton = document.getElementById('extra-time-btn');
         const scoreHistoryList = document.getElementById('score-history');
         const correctSound = document.getElementById('correct-sound');
+        const incorrectSound = document.getElementById('incorrect-sound');
         const progressBar = document.getElementById('progress-bar');
 
         window.onload = () => {
@@ -283,6 +285,7 @@
                 document.body.classList.add('flash-bg-incorrect');
                 setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
                 resetStreak();
+                incorrectSound.play(); // Play incorrect sound
             }
         });
 
