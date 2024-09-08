@@ -15,6 +15,7 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #f4f4f4;
+    transition: background-color 0.2s ease;
 }
 
 .container {
@@ -29,17 +30,26 @@ body {
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 20px;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 #typed-word {
     font-size: 18px;
     padding: 10px;
     width: 200px;
+    transition: border 0.3s ease;
 }
 
 #score, #timer {
     font-size: 18px;
     margin-top: 20px;
+}
+
+#progress-bar {
+    height: 10px;
+    background-color: #28a745;
+    transition: width 1s ease;
+    margin-bottom: 10px;
 }
 
 #start-btn {
@@ -66,10 +76,6 @@ body {
     text-align: left;
 }
 
-#record-list h2 {
-    margin-bottom: 10px;
-}
-
 #score-history {
     list-style-type: none;
     padding: 0;
@@ -82,12 +88,40 @@ body {
     border-radius: 4px;
 }
 
+.correct {
+    color: green;
+    transform: scale(1.2);
+}
+
+.incorrect {
+    color: red;
+    animation: shake 0.5s;
+}
+
+.flash-bg-correct {
+    background-color: lightgreen;
+}
+
+.flash-bg-incorrect {
+    background-color: lightcoral;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-10px); }
+    100% { transform: translateX(0); }
+}
+
+
     </style>
 </head>
 <body>
     <div class="container">
         <img src="Fastyper.png">
         <div id="game-info">
+            <div id="progress-bar"></div>
             <p id="timer">Time left: 60s</p>
             <p id="word"></p>
         </div>
@@ -109,7 +143,7 @@ let score = 0;
 let time = 60;
 let timerInterval;
 let gameStarted = false;
-let scoreHistory = JSON.parse(localStorage.getItem('scoreHistory')) || []; // Load score history from LocalStorage
+let scoreHistory = JSON.parse(localStorage.getItem('scoreHistory')) || [];
 
 const wordDisplay = document.getElementById('word');
 const typedWordInput = document.getElementById('typed-word');
@@ -117,9 +151,9 @@ const timerDisplay = document.getElementById('timer');
 const scoreDisplay = document.getElementById('score');
 const startButton = document.getElementById('start-btn');
 const scoreHistoryList = document.getElementById('score-history');
-const correctSound = document.getElementById('correct-sound'); // Audio element for the correct word sound
+const correctSound = document.getElementById('correct-sound');
+const progressBar = document.getElementById('progress-bar');
 
-// Load saved score history when the page loads
 window.onload = updateScoreHistory;
 
 function startGame() {
@@ -136,12 +170,14 @@ function startGame() {
 function generateWord() {
     currentWord = words[Math.floor(Math.random() * words.length)];
     wordDisplay.textContent = currentWord;
+    wordDisplay.classList.remove('correct', 'incorrect');
 }
 
 function updateTimer() {
     if (time > 0) {
         time--;
         timerDisplay.textContent = `Time left: ${time}s`;
+        progressBar.style.width = `${(time / 60) * 100}%`;
     } else {
         endGame();
     }
@@ -153,7 +189,7 @@ function endGame() {
     wordDisplay.textContent = 'Game Over!';
     startButton.disabled = false;
     scoreHistory.push(score);
-    localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory)); // Save updated history to LocalStorage
+    localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
     updateScoreHistory();
     alert(`Time's up! Your score is ${score}`);
 }
@@ -172,8 +208,15 @@ typedWordInput.addEventListener('input', () => {
         score++;
         scoreDisplay.textContent = `Score: ${score}`;
         typedWordInput.value = '';
+        wordDisplay.classList.add('correct');
+        document.body.classList.add('flash-bg-correct');
+        setTimeout(() => document.body.classList.remove('flash-bg-correct'), 200);
+        correctSound.play();
         generateWord();
-        correctSound.play(); // Play sound when the word is typed correctly
+    } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
+        wordDisplay.classList.add('incorrect');
+        document.body.classList.add('flash-bg-incorrect');
+        setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
     }
 });
 
