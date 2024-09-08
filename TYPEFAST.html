@@ -7,119 +7,122 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/x-icon" href="ft.png">
     <style>
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f4f4f4;
-    transition: background-color 0.2s ease;
-}
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            transition: background-color 0.2s ease;
+        }
 
-.container {
-    text-align: center;
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
 
-#word {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    transition: color 0.2s ease, transform 0.2s ease;
-}
+        #word {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
 
-#typed-word {
-    font-size: 18px;
-    padding: 10px;
-    width: 200px;
-    transition: border 0.3s ease;
-}
+        #typed-word {
+            font-size: 18px;
+            padding: 10px;
+            width: 200px;
+            transition: border 0.3s ease;
+        }
 
-#score, #timer {
-    font-size: 18px;
-    margin-top: 20px;
-}
+        #score, #timer, #streak, #high-score {
+            font-size: 18px;
+            margin-top: 20px;
+        }
 
-#progress-bar {
-    height: 10px;
-    background-color: #28a745;
-    transition: width 1s ease;
-    margin-bottom: 10px;
-}
+        #progress-bar {
+            height: 10px;
+            background-color: #28a745;
+            transition: width 1s ease;
+            margin-bottom: 10px;
+        }
 
-#start-btn {
-    padding: 10px 20px;
-    font-size: 18px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 20px;
-}
+        #start-btn, #extra-time-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
 
-#start-btn:hover {
-    background-color: #218838;
-}
+        #start-btn:hover, #extra-time-btn:hover {
+            background-color: #218838;
+        }
 
-#start-btn:disabled {
-    background-color: grey;
-}
+        #start-btn:disabled {
+            background-color: grey;
+        }
 
-#record-list {
-    margin-top: 30px;
-    text-align: left;
-}
+        #record-list {
+            margin-top: 30px;
+            text-align: left;
+        }
 
-#score-history {
-    list-style-type: none;
-    padding: 0;
-}
+        #score-history {
+            list-style-type: none;
+            padding: 0;
+        }
 
-#score-history li {
-    background-color: #e9ecef;
-    padding: 8px;
-    margin-bottom: 5px;
-    border-radius: 4px;
-}
+        #score-history li {
+            background-color: #e9ecef;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
 
-.correct {
-    color: green;
-    transform: scale(1.2);
-}
+        .correct {
+            color: green;
+            transform: scale(1.2);
+        }
 
-.incorrect {
-    color: red;
-    animation: shake 0.5s;
-}
+        .incorrect {
+            color: red;
+            animation: shake 0.5s;
+        }
 
-.flash-bg-correct {
-    background-color: lightgreen;
-}
+        .flash-bg-correct {
+            background-color: lightgreen;
+        }
 
-.flash-bg-incorrect {
-    background-color: lightcoral;
-}
+        .flash-bg-incorrect {
+            background-color: lightcoral;
+        }
 
-@keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    50% { transform: translateX(10px); }
-    75% { transform: translateX(-10px); }
-    100% { transform: translateX(0); }
-}
+        .warning {
+            color: red;
+            font-weight: bold;
+        }
 
-
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="Fastyper.png">
+        <img src="Fastyper.png" alt="Fastyper">
         <div id="game-info">
             <div id="progress-bar"></div>
             <p id="timer">Time left: 60s</p>
@@ -127,101 +130,145 @@ body {
         </div>
         <input type="text" id="typed-word" placeholder="Type the word here..." autofocus>
         <button id="start-btn">Start Game</button>
+        <button id="extra-time-btn">Extra Time</button>
         <p id="score">Score: 0</p>
+        <p id="streak">Streak: 0</p>
+        <p id="high-score">High Score: 0</p>
         <div id="record-list">
             <h2>Record List</h2>
             <ul id="score-history"></ul>
         </div>
         <audio id="correct-sound" src="right.mp3" preload="auto"></audio>
-
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.0/dist/confetti.browser.min.js"></script>
     <script>
-const words = ['apple', 'banana', 'orange', 'grape', 'pineapple', 'strawberry', 'mango', 'kiwi', 'melon', 'lemon', 'dollars', 'donald trump', 'truck', 'firework', 'co-worker', 'shoes', 'pizza', 'ronaldo', 'black', 'white', 'person', 'college', 'magnificent', 'headphones', 'double', 'mini-cooper', 'ford', 'forward', 'cute', 'cloud', 'homeless', 'january', 'independent', 'snowman', 'classroom', 'train', 'toilet', 'shower', 'blackjack', 'poker', 'dancing', 'grandpa', 'absolute'];
-let currentWord = '';
-let score = 0;
-let time = 60;
-let timerInterval;
-let gameStarted = false;
-let scoreHistory = JSON.parse(localStorage.getItem('scoreHistory')) || [];
+        const words = ['apple', 'banana', 'orange', 'grape', 'pineapple', 'strawberry', 'mango', 'kiwi', 'melon', 'lemon', 'dollars', 'donald trump', 'truck', 'firework', 'co-worker', 'shoes', 'pizza', 'ronaldo', 'black', 'white', 'person', 'college', 'magnificent', 'headphones', 'double', 'mini-cooper', 'ford', 'forward', 'cute', 'cloud', 'homeless', 'january', 'independent', 'snowman', 'classroom', 'train', 'toilet', 'shower', 'blackjack', 'poker', 'dancing', 'grandpa', 'absolute'];
+        let currentWord = '';
+        let score = 0;
+        let streak = 0;
+        let time = 60;
+        let timerInterval;
+        let gameStarted = false;
+        let scoreHistory = JSON.parse(localStorage.getItem('scoreHistory')) || [];
+        let highScore = localStorage.getItem('highScore') || 0;
 
-const wordDisplay = document.getElementById('word');
-const typedWordInput = document.getElementById('typed-word');
-const timerDisplay = document.getElementById('timer');
-const scoreDisplay = document.getElementById('score');
-const startButton = document.getElementById('start-btn');
-const scoreHistoryList = document.getElementById('score-history');
-const correctSound = document.getElementById('correct-sound');
-const progressBar = document.getElementById('progress-bar');
+        const wordDisplay = document.getElementById('word');
+        const typedWordInput = document.getElementById('typed-word');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+        const streakDisplay = document.getElementById('streak');
+        const highScoreDisplay = document.getElementById('high-score');
+        const startButton = document.getElementById('start-btn');
+        const extraTimeButton = document.getElementById('extra-time-btn');
+        const scoreHistoryList = document.getElementById('score-history');
+        const correctSound = document.getElementById('correct-sound');
+        const progressBar = document.getElementById('progress-bar');
 
-window.onload = updateScoreHistory;
+        window.onload = () => {
+            updateScoreHistory();
+            highScoreDisplay.textContent = `High Score: ${highScore}`;
+        };
 
-function startGame() {
-    gameStarted = true;
-    score = 0;
-    time = 60;
-    typedWordInput.value = '';
-    typedWordInput.focus();
-    startButton.disabled = true;
-    generateWord();
-    timerInterval = setInterval(updateTimer, 1000);
-}
+        function startGame() {
+            gameStarted = true;
+            score = 0;
+            streak = 0;
+            time = 60;
+            typedWordInput.value = '';
+            typedWordInput.focus();
+            startButton.disabled = true;
+            generateWord();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
 
-function generateWord() {
-    currentWord = words[Math.floor(Math.random() * words.length)];
-    wordDisplay.textContent = currentWord;
-    wordDisplay.classList.remove('correct', 'incorrect');
-}
+        function generateWord() {
+            currentWord = words[Math.floor(Math.random() * words.length)];
+            wordDisplay.textContent = currentWord;
+            wordDisplay.classList.remove('correct', 'incorrect');
+        }
 
-function updateTimer() {
-    if (time > 0) {
-        time--;
-        timerDisplay.textContent = `Time left: ${time}s`;
-        progressBar.style.width = `${(time / 60) * 100}%`;
-    } else {
-        endGame();
-    }
-}
+        function updateTimer() {
+            if (time > 0) {
+                time--;
+                timerDisplay.textContent = `Time left: ${time}s`;
+                progressBar.style.width = `${(time / 60) * 100}%`;
 
-function endGame() {
-    clearInterval(timerInterval);
-    gameStarted = false;
-    wordDisplay.textContent = 'Game Over!';
-    startButton.disabled = false;
-    scoreHistory.push(score);
-    localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
-    updateScoreHistory();
-    alert(`Time's up! Your score is ${score}`);
-}
+                if (time <= 10) {
+                    timerDisplay.classList.add('warning');
+                }
+            } else {
+                endGame();
+            }
+        }
 
-function updateScoreHistory() {
-    scoreHistoryList.innerHTML = '';
-    scoreHistory.forEach((s, index) => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `Game ${index + 1}: ${s} words`;
-        scoreHistoryList.appendChild(listItem);
-    });
-}
+        function endGame() {
+            clearInterval(timerInterval);
+            gameStarted = false;
+            wordDisplay.textContent = 'Game Over!';
+            startButton.disabled = false;
+            scoreHistory.push(score);
+            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
+            updateScoreHistory();
+            updateHighScore();
+            alert(`Time's up! Your score is ${score}`);
+            confetti(); // Trigger confetti effect
+        }
 
-typedWordInput.addEventListener('input', () => {
-    if (typedWordInput.value.trim() === currentWord && gameStarted) {
-        score++;
-        scoreDisplay.textContent = `Score: ${score}`;
-        typedWordInput.value = '';
-        wordDisplay.classList.add('correct');
-        document.body.classList.add('flash-bg-correct');
-        setTimeout(() => document.body.classList.remove('flash-bg-correct'), 200);
-        correctSound.play();
-        generateWord();
-    } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
-        wordDisplay.classList.add('incorrect');
-        document.body.classList.add('flash-bg-incorrect');
-        setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
-    }
-});
+        function updateScoreHistory() {
+            scoreHistoryList.innerHTML = '';
+            scoreHistory.forEach((s, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `Game ${index + 1}: ${s} words`;
+                scoreHistoryList.appendChild(listItem);
+            });
+        }
 
-startButton.addEventListener('click', startGame);
+        function updateHighScore() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreDisplay.textContent = `High Score: ${highScore}`;
+            }
+        }
 
+        function resetStreak() {
+            streak = 0;
+            streakDisplay.textContent = `Streak: ${streak}`;
+        }
+
+        function updateStreak() {
+            streak++;
+            streakDisplay.textContent = `Streak: ${streak}`;
+        }
+
+        typedWordInput.addEventListener('input', () => {
+            if (typedWordInput.value.trim() === currentWord && gameStarted) {
+                score++;
+                updateStreak();
+                scoreDisplay.textContent = `Score: ${score}`;
+                typedWordInput.value = '';
+                wordDisplay.classList.add('correct');
+                document.body.classList.add('flash-bg-correct');
+                setTimeout(() => document.body.classList.remove('flash-bg-correct'), 200);
+                correctSound.play();
+                generateWord();
+            } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
+                wordDisplay.classList.add('incorrect');
+                document.body.classList.add('flash-bg-incorrect');
+                setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
+                resetStreak();
+            }
+        });
+
+        startButton.addEventListener('click', startGame);
+
+        extraTimeButton.addEventListener('click', () => {
+            if (gameStarted) {
+                time += 10; // Add 10 seconds
+                if (time > 60) time = 60; // Cap time at 60 seconds
+            }
+        });
     </script>
 </body>
 </html>
