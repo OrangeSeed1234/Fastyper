@@ -63,12 +63,22 @@
             margin-top: 20px;
         }
 
-        #start-btn:hover, #extra-time-btn:hover {
+        #start-btn:hover, #extra-time-btn.enabled:hover {
             background-color: #218838;
         }
 
         #start-btn:disabled {
             background-color: grey;
+        }
+
+        #extra-time-btn {
+            background-color: grey; /* Initially disabled */
+            cursor: not-allowed;
+        }
+
+        #extra-time-btn.enabled {
+            background-color: #28a745;
+            cursor: pointer;
         }
 
         #record-list {
@@ -152,6 +162,8 @@
         let gameStarted = false;
         let scoreHistory = JSON.parse(localStorage.getItem('scoreHistory')) || [];
         let highScore = localStorage.getItem('highScore') || 0;
+        let streakForPowerUp = 5; // Streak required to unlock power-up
+        let streakToUsePowerUp = 5; // Streak required to use power-up
 
         const wordDisplay = document.getElementById('word');
         const typedWordInput = document.getElementById('typed-word');
@@ -168,6 +180,7 @@
         window.onload = () => {
             updateScoreHistory();
             highScoreDisplay.textContent = `High Score: ${highScore}`;
+            updatePowerUpButton();
         };
 
         function startGame() {
@@ -235,11 +248,23 @@
         function resetStreak() {
             streak = 0;
             streakDisplay.textContent = `Streak: ${streak}`;
+            updatePowerUpButton();
         }
 
         function updateStreak() {
             streak++;
             streakDisplay.textContent = `Streak: ${streak}`;
+            updatePowerUpButton();
+        }
+
+        function updatePowerUpButton() {
+            if (streak >= streakForPowerUp) {
+                extraTimeButton.classList.add('enabled');
+                extraTimeButton.disabled = false;
+            } else {
+                extraTimeButton.classList.remove('enabled');
+                extraTimeButton.disabled = true;
+            }
         }
 
         typedWordInput.addEventListener('input', () => {
@@ -264,9 +289,11 @@
         startButton.addEventListener('click', startGame);
 
         extraTimeButton.addEventListener('click', () => {
-            if (gameStarted) {
+            if (gameStarted && streak >= streakForPowerUp) {
                 time += 10; // Add 10 seconds
                 if (time > 60) time = 60; // Cap time at 60 seconds
+                streak -= streakToUsePowerUp; // Deduct streak used for power-up
+                updateStreak();
             }
         });
     </script>
