@@ -299,6 +299,39 @@
                 updateStreak();
             }
         });
+        function updateScoreHistory() {
+    scoreHistoryList.innerHTML = '';
+    scoreHistory.forEach((s, index) => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `Game ${index + 1}: ${s} words`;
+        
+        // Create delete button for each record
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.style.marginLeft = '10px';
+        deleteButton.style.backgroundColor = '#dc3545';
+        deleteButton.style.color = 'white';
+        deleteButton.style.border = 'none';
+        deleteButton.style.padding = '5px';
+        deleteButton.style.borderRadius = '4px';
+        deleteButton.style.cursor = 'pointer';
+        
+        // Add delete functionality
+        deleteButton.addEventListener('click', () => {
+            deleteRecord(index);
+        });
+
+        listItem.appendChild(deleteButton);
+        scoreHistoryList.appendChild(listItem);
+    });
+}
+
+function deleteRecord(index) {
+    scoreHistory.splice(index, 1);  // Remove the score from the scoreHistory array
+    localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));  // Update localStorage
+    updateScoreHistory();  // Refresh the display
+}
+
     </script>
 </body>
 </html>
