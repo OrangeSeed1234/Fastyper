@@ -72,7 +72,7 @@
         }
 
         #extra-time-btn {
-            background-color: grey; /* Initially disabled */
+            background-color: grey;
             cursor: not-allowed;
         }
 
@@ -128,6 +128,38 @@
             75% { transform: translateX(-10px); }
             100% { transform: translateX(0); }
         }
+
+        /* 3D Text and Swirl Animation */
+        #swirl-score {
+            font-size: 36px;
+            color: #ff5722;
+            font-weight: bold;
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg);
+            perspective: 1000px;
+            opacity: 0;
+        }
+
+        @keyframes swirl {
+            0% {
+                transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg) scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -50%) rotateX(180deg) rotateY(180deg) scale(1.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) rotateX(360deg) rotateY(360deg) scale(1);
+                opacity: 0;
+            }
+        }
+
+        #swirl-score.swirl {
+            animation: swirl 2s ease forwards;
+        }
     </style>
 </head>
 <body>
@@ -152,6 +184,9 @@
         <audio id="incorrect-sound" src="chicko.mp3" preload="auto"></audio>
     </div>
 
+    <!-- Swirling score element -->
+    <div id="swirl-score">+1</div>
+
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.0/dist/confetti.browser.min.js"></script>
     <script>
         const words = ['apple', 'banana', 'orange', 'grape', 'pineapple', 'strawberry', 'mango', 'kiwi', 'melon', 'lemon', 'dollars', 'donald trump', 'truck', 'firework', 'co-worker', 'shoes', 'pizza', 'ronaldo', 'black', 'white', 'person', 'college', 'magnificent', 'headphones', 'double', 'mini-cooper', 'ford', 'forward', 'cute', 'cloud', 'homeless', 'january', 'independent', 'snowman', 'classroom', 'train', 'toilet', 'shower', 'blackjack', 'poker', 'dancing', 'grandpa', 'absolute'];
@@ -163,8 +198,8 @@
         let gameStarted = false;
         let scoreHistory = JSON.parse(localStorage.getItem('scoreHistory')) || [];
         let highScore = localStorage.getItem('highScore') || 0;
-        let streakForPowerUp = 5; // Streak required to unlock power-up
-        let streakToUsePowerUp = 5; // Streak required to use power-up
+        let streakForPowerUp = 5;
+        let streakToUsePowerUp = 5;
 
         const wordDisplay = document.getElementById('word');
         const typedWordInput = document.getElementById('typed-word');
@@ -178,6 +213,7 @@
         const correctSound = document.getElementById('correct-sound');
         const incorrectSound = document.getElementById('incorrect-sound');
         const progressBar = document.getElementById('progress-bar');
+        const swirlScore = document.getElementById('swirl-score'); // Swirl score element
 
         window.onload = () => {
             updateScoreHistory();
@@ -227,7 +263,7 @@
             updateScoreHistory();
             updateHighScore();
             alert(`Time's up! Your score is ${score}`);
-            confetti(); // Trigger confetti effect
+            confetti();
         }
 
         function updateScoreHistory() {
@@ -235,8 +271,30 @@
             scoreHistory.forEach((s, index) => {
                 const listItem = document.createElement('li');
                 listItem.textContent = `Game ${index + 1}: ${s} words`;
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.style.marginLeft = '10px';
+                deleteButton.style.backgroundColor = '#dc3545';
+                deleteButton.style.color = 'white';
+                deleteButton.style.border = 'none';
+                deleteButton.style.padding = '5px';
+                deleteButton.style.borderRadius = '4px';
+                deleteButton.style.cursor = 'pointer';
+
+                deleteButton.addEventListener('click', () => {
+                    deleteRecord(index);
+                });
+
+                listItem.appendChild(deleteButton);
                 scoreHistoryList.appendChild(listItem);
             });
+        }
+
+        function deleteRecord(index) {
+            scoreHistory.splice(index, 1);
+            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
+            updateScoreHistory();
         }
 
         function updateHighScore() {
@@ -280,12 +338,18 @@
                 setTimeout(() => document.body.classList.remove('flash-bg-correct'), 200);
                 correctSound.play();
                 generateWord();
+
+                // Show swirling score
+                swirlScore.textContent = `+${score}`;
+                swirlScore.classList.add('swirl');
+                setTimeout(() => swirlScore.classList.remove('swirl'), 2000);
+
             } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
                 wordDisplay.classList.add('incorrect');
                 document.body.classList.add('flash-bg-incorrect');
                 setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
                 resetStreak();
-                incorrectSound.play(); // Play incorrect sound
+                incorrectSound.play();
             }
         });
 
@@ -293,45 +357,12 @@
 
         extraTimeButton.addEventListener('click', () => {
             if (gameStarted && streak >= streakForPowerUp) {
-                time += 10; // Add 10 seconds
-                if (time > 60) time = 60; // Cap time at 60 seconds
-                streak -= streakToUsePowerUp; // Deduct streak used for power-up
+                time += 10;
+                if (time > 60) time = 60;
+                streak -= streakToUsePowerUp;
                 updateStreak();
             }
         });
-        function updateScoreHistory() {
-    scoreHistoryList.innerHTML = '';
-    scoreHistory.forEach((s, index) => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `Game ${index + 1}: ${s} words`;
-        
-        // Create delete button for each record
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.style.marginLeft = '10px';
-        deleteButton.style.backgroundColor = '#dc3545';
-        deleteButton.style.color = 'white';
-        deleteButton.style.border = 'none';
-        deleteButton.style.padding = '5px';
-        deleteButton.style.borderRadius = '4px';
-        deleteButton.style.cursor = 'pointer';
-        
-        // Add delete functionality
-        deleteButton.addEventListener('click', () => {
-            deleteRecord(index);
-        });
-
-        listItem.appendChild(deleteButton);
-        scoreHistoryList.appendChild(listItem);
-    });
-}
-
-function deleteRecord(index) {
-    scoreHistory.splice(index, 1);  // Remove the score from the scoreHistory array
-    localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));  // Update localStorage
-    updateScoreHistory();  // Refresh the display
-}
-
     </script>
 </body>
 </html>
