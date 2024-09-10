@@ -157,8 +157,23 @@
             }
         }
 
+        @keyframes swirl-final {
+            0% {
+                transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) rotateX(720deg) rotateY(720deg) scale(2);
+                opacity: 0;
+            }
+        }
+
         #swirl-score.swirl {
             animation: swirl 2s ease forwards;
+        }
+
+        #swirl-score.swirl-final {
+            animation: swirl-final 3s ease forwards;
         }
     </style>
 </head>
@@ -189,7 +204,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.0/dist/confetti.browser.min.js"></script>
     <script>
-        const words = ['apple', 'banana', 'orange', 'grape', 'pineapple', 'strawberry', 'mango', 'kiwi', 'melon', 'lemon', 'dollars', 'donald trump', 'truck', 'firework', 'co-worker', 'shoes', 'pizza', 'ronaldo', 'black', 'white', 'person', 'college', 'magnificent', 'headphones', 'double', 'mini-cooper', 'ford', 'forward', 'cute', 'cloud', 'homeless', 'january', 'independent', 'snowman', 'classroom', 'train', 'toilet', 'shower', 'blackjack', 'poker', 'dancing', 'grandpa', 'absolute'];
+        const words = ['apple', 'banana', 'orange', 'grape', 'pineapple', 'strawberry', 'mango', 'kiwi', 'melon', 'lemon'];
         let currentWord = '';
         let score = 0;
         let streak = 0;
@@ -262,39 +277,24 @@
             localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
             updateScoreHistory();
             updateHighScore();
-            alert(`Time's up! Your score is ${score}`);
-            confetti();
+
+            // Display swirling final score
+            swirlScore.textContent = `Final Score: ${score}`;
+            swirlScore.classList.add('swirl-final');  // Add a new class for the final swirling effect
+
+            setTimeout(() => {
+                alert(`Time's up! Your final score is ${score}`);
+                confetti();  // Celebrate with confetti
+            }, 2000);  // Delay the alert so it shows after the swirling effect finishes
         }
 
         function updateScoreHistory() {
             scoreHistoryList.innerHTML = '';
             scoreHistory.forEach((s, index) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `Game ${index + 1}: ${s} words`;
-
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.style.marginLeft = '10px';
-                deleteButton.style.backgroundColor = '#dc3545';
-                deleteButton.style.color = 'white';
-                deleteButton.style.border = 'none';
-                deleteButton.style.padding = '5px';
-                deleteButton.style.borderRadius = '4px';
-                deleteButton.style.cursor = 'pointer';
-
-                deleteButton.addEventListener('click', () => {
-                    deleteRecord(index);
-                });
-
-                listItem.appendChild(deleteButton);
-                scoreHistoryList.appendChild(listItem);
+                const li = document.createElement('li');
+                li.textContent = `Game ${index + 1}: ${s} points`;
+                scoreHistoryList.appendChild(li);
             });
-        }
-
-        function deleteRecord(index) {
-            scoreHistory.splice(index, 1);
-            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
-            updateScoreHistory();
         }
 
         function updateHighScore() {
@@ -305,50 +305,39 @@
             }
         }
 
-        function resetStreak() {
-            streak = 0;
-            streakDisplay.textContent = `Streak: ${streak}`;
-            updatePowerUpButton();
-        }
-
-        function updateStreak() {
-            streak++;
-            streakDisplay.textContent = `Streak: ${streak}`;
-            updatePowerUpButton();
-        }
-
-        function updatePowerUpButton() {
-            if (streak >= streakForPowerUp) {
-                extraTimeButton.classList.add('enabled');
-                extraTimeButton.disabled = false;
-            } else {
-                extraTimeButton.classList.remove('enabled');
-                extraTimeButton.disabled = true;
-            }
-        }
-
         typedWordInput.addEventListener('input', () => {
-            if (typedWordInput.value.trim() === currentWord && gameStarted) {
+            if (!gameStarted) return;
+
+            const typedWord = typedWordInput.value.trim().toLowerCase();
+            const correct = typedWord === currentWord;
+
+            if (correct) {
                 score++;
-                updateStreak();
+                streak++;
                 scoreDisplay.textContent = `Score: ${score}`;
-                typedWordInput.value = '';
+                streakDisplay.textContent = `Streak: ${streak}`;
                 wordDisplay.classList.add('correct');
-                document.body.classList.add('flash-bg-correct');
-                setTimeout(() => document.body.classList.remove('flash-bg-correct'), 200);
                 correctSound.play();
-                generateWord();
+                progressBar.style.width = `${(time / 60) * 100}%`;
 
-                // Show swirling score
-                swirlScore.textContent = `+${score}`;
+                // Trigger swirl effect
+                swirlScore.textContent = "+1";
                 swirlScore.classList.add('swirl');
-                setTimeout(() => swirlScore.classList.remove('swirl'), 2000);
+                setTimeout(() => {
+                    swirlScore.classList.remove('swirl');
+                }, 2000);
 
-            } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
+                generateWord();
+                typedWordInput.value = '';
+
+                if (streak >= streakToUsePowerUp) {
+                    extraTimeButton.classList.add('enabled');
+                    updatePowerUpButton();
+                }
+            } else {
+                streak = 0;
+                streakDisplay.textContent = `Streak: ${streak}`;
                 wordDisplay.classList.add('incorrect');
-                document.body.classList.add('flash-bg-incorrect');
-                setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
-                resetStreak();
                 incorrectSound.play();
             }
         });
@@ -356,13 +345,23 @@
         startButton.addEventListener('click', startGame);
 
         extraTimeButton.addEventListener('click', () => {
-            if (gameStarted && streak >= streakForPowerUp) {
-                time += 10;
-                if (time > 60) time = 60;
-                streak -= streakToUsePowerUp;
-                updateStreak();
-            }
+            if (!extraTimeButton.classList.contains('enabled') || !gameStarted) return;
+
+            time += 10;
+            timerDisplay.textContent = `Time left: ${time}s`;
+            extraTimeButton.classList.remove('enabled');
+            updatePowerUpButton();
         });
+
+        function updatePowerUpButton() {
+            if (streak >= streakToUsePowerUp) {
+                extraTimeButton.classList.add('enabled');
+                extraTimeButton.disabled = false;
+            } else {
+                extraTimeButton.classList.remove('enabled');
+                extraTimeButton.disabled = true;
+            }
+        }
     </script>
 </body>
 </html>
