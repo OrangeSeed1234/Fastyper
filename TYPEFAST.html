@@ -52,7 +52,7 @@
             margin-bottom: 10px;
         }
 
-        #start-btn, #extra-time-btn {
+        #start-btn, #extra-time-btn, #freeze-time-btn {
             padding: 10px 20px;
             font-size: 18px;
             background-color: #28a745;
@@ -63,7 +63,7 @@
             margin-top: 20px;
         }
 
-        #start-btn:hover, #extra-time-btn.enabled:hover {
+        #start-btn:hover, #extra-time-btn.enabled:hover, #freeze-time-btn:hover {
             background-color: #218838;
         }
 
@@ -71,12 +71,12 @@
             background-color: grey;
         }
 
-        #extra-time-btn {
+        #extra-time-btn, #freeze-time-btn {
             background-color: grey;
             cursor: not-allowed;
         }
 
-        #extra-time-btn.enabled {
+        #extra-time-btn.enabled, #freeze-time-btn.enabled {
             background-color: #28a745;
             cursor: pointer;
         }
@@ -129,6 +129,13 @@
             100% { transform: translateX(0); }
         }
 
+        @keyframes shake-wrong {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
         /* 3D Text and Swirl Animation */
         #swirl-score {
             font-size: 36px;
@@ -157,8 +164,23 @@
             }
         }
 
+        @keyframes swirl-final {
+            0% {
+                transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) rotateX(720deg) rotateY(720deg) scale(2);
+                opacity: 0;
+            }
+        }
+
         #swirl-score.swirl {
             animation: swirl 2s ease forwards;
+        }
+
+        #swirl-score.swirl-final {
+            animation: swirl-final 3s ease forwards;
         }
     </style>
 </head>
@@ -173,6 +195,7 @@
         <input type="text" id="typed-word" placeholder="Type the word here..." autofocus>
         <button id="start-btn">Start Game</button>
         <button id="extra-time-btn">Extra Time</button>
+        <button id="freeze-time-btn">Freeze Time</button>
         <p id="score">Score: 0</p>
         <p id="streak">Streak: 0</p>
         <p id="high-score">High Score: 0</p>
@@ -200,6 +223,8 @@
         let highScore = localStorage.getItem('highScore') || 0;
         let streakForPowerUp = 5;
         let streakToUsePowerUp = 5;
+        let multiplier = 1;  // For score multiplier during challenges
+        let challengeTimeout;  // To keep track of challenge durations
 
         const wordDisplay = document.getElementById('word');
         const typedWordInput = document.getElementById('typed-word');
@@ -209,34 +234,49 @@
         const highScoreDisplay = document.getElementById('high-score');
         const startButton = document.getElementById('start-btn');
         const extraTimeButton = document.getElementById('extra-time-btn');
+        const freezeTimeButton = document.getElementById('freeze-time-btn');
         const scoreHistoryList = document.getElementById('score-history');
         const correctSound = document.getElementById('correct-sound');
         const incorrectSound = document.getElementById('incorrect-sound');
         const progressBar = document.getElementById('progress-bar');
-        const swirlScore = document.getElementById('swirl-score'); // Swirl score element
+        const swirlScore = document.getElementById('swirl-score');
 
-        window.onload = () => {
-            updateScoreHistory();
-            highScoreDisplay.textContent = `High Score: ${highScore}`;
-            updatePowerUpButton();
-        };
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
+
+        function generateWord() {
+            const easyWords = ['apple', 'grape', 'kiwi', 'melon', 'lemon'];
+            const mediumWords = ['banana', 'orange', 'mango', 'peach'];
+            const hardWords = ['pineapple', 'strawberry'];
+
+            let wordList;
+            if (score < 5) {
+                wordList = easyWords;
+            } else if (score < 10) {
+                wordList = mediumWords;
+            } else {
+                wordList = hardWords;
+            }
+
+            currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+            wordDisplay.textContent = currentWord;
+        }
 
         function startGame() {
+            if (gameStarted) return;
             gameStarted = true;
             score = 0;
             streak = 0;
             time = 60;
-            typedWordInput.value = '';
-            typedWordInput.focus();
+            scoreDisplay.textContent = `Score: ${score}`;
+            streakDisplay.textContent = `Streak: ${streak}`;
+            timerDisplay.textContent = `Time left: ${time}s`;
+            progressBar.style.width = '100%';
             startButton.disabled = true;
+            extraTimeButton.disabled = false;
+            freezeTimeButton.disabled = false;
+
             generateWord();
             timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        function generateWord() {
-            currentWord = words[Math.floor(Math.random() * words.length)];
-            wordDisplay.textContent = currentWord;
-            wordDisplay.classList.remove('correct', 'incorrect');
         }
 
         function updateTimer() {
@@ -244,10 +284,6 @@
                 time--;
                 timerDisplay.textContent = `Time left: ${time}s`;
                 progressBar.style.width = `${(time / 60) * 100}%`;
-
-                if (time <= 10) {
-                    timerDisplay.classList.add('warning');
-                }
             } else {
                 endGame();
             }
@@ -256,48 +292,10 @@
         function endGame() {
             clearInterval(timerInterval);
             gameStarted = false;
-            wordDisplay.textContent = 'Game Over!';
             startButton.disabled = false;
             scoreHistory.push(score);
             localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
-            updateScoreHistory();
-            updateHighScore();
-            alert(`Time's up! Your score is ${score}`);
-            confetti();
-        }
-
-        function updateScoreHistory() {
-            scoreHistoryList.innerHTML = '';
-            scoreHistory.forEach((s, index) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `Game ${index + 1}: ${s} words`;
-
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.style.marginLeft = '10px';
-                deleteButton.style.backgroundColor = '#dc3545';
-                deleteButton.style.color = 'white';
-                deleteButton.style.border = 'none';
-                deleteButton.style.padding = '5px';
-                deleteButton.style.borderRadius = '4px';
-                deleteButton.style.cursor = 'pointer';
-
-                deleteButton.addEventListener('click', () => {
-                    deleteRecord(index);
-                });
-
-                listItem.appendChild(deleteButton);
-                scoreHistoryList.appendChild(listItem);
-            });
-        }
-
-        function deleteRecord(index) {
-            scoreHistory.splice(index, 1);
-            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
-            updateScoreHistory();
-        }
-
-        function updateHighScore() {
+            renderScoreHistory();
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
@@ -305,64 +303,108 @@
             }
         }
 
-        function resetStreak() {
-            streak = 0;
-            streakDisplay.textContent = `Streak: ${streak}`;
-            updatePowerUpButton();
-        }
-
-        function updateStreak() {
-            streak++;
-            streakDisplay.textContent = `Streak: ${streak}`;
-            updatePowerUpButton();
-        }
-
-        function updatePowerUpButton() {
-            if (streak >= streakForPowerUp) {
-                extraTimeButton.classList.add('enabled');
-                extraTimeButton.disabled = false;
-            } else {
-                extraTimeButton.classList.remove('enabled');
-                extraTimeButton.disabled = true;
-            }
-        }
-
-        typedWordInput.addEventListener('input', () => {
-            if (typedWordInput.value.trim() === currentWord && gameStarted) {
-                score++;
-                updateStreak();
-                scoreDisplay.textContent = `Score: ${score}`;
-                typedWordInput.value = '';
-                wordDisplay.classList.add('correct');
-                document.body.classList.add('flash-bg-correct');
-                setTimeout(() => document.body.classList.remove('flash-bg-correct'), 200);
+        function handleInput() {
+            const typedWord = typedWordInput.value.trim();
+            if (typedWord.toLowerCase() === currentWord.toLowerCase()) {
+                score += 1 * multiplier;
+                streak++;
                 correctSound.play();
+                flashCorrect();
                 generateWord();
-
-                // Show swirling score
-                swirlScore.textContent = `+${score}`;
-                swirlScore.classList.add('swirl');
-                setTimeout(() => swirlScore.classList.remove('swirl'), 2000);
-
-            } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
-                wordDisplay.classList.add('incorrect');
-                document.body.classList.add('flash-bg-incorrect');
-                setTimeout(() => document.body.classList.remove('flash-bg-incorrect'), 200);
-                resetStreak();
+            } else {
+                streak = 0;
+                flashIncorrect();
                 incorrectSound.play();
             }
-        });
+            scoreDisplay.textContent = `Score: ${score}`;
+            streakDisplay.textContent = `Streak: ${streak}`;
+            typedWordInput.value = '';
+        }
+
+        function flashCorrect() {
+            wordDisplay.classList.add('correct');
+            setTimeout(() => {
+                wordDisplay.classList.remove('correct');
+            }, 500);
+        }
+
+        function flashIncorrect() {
+            wordDisplay.classList.add('incorrect');
+            setTimeout(() => {
+                wordDisplay.classList.remove('incorrect');
+            }, 500);
+        }
+
+        function extraTime() {
+            if (time < 60) {
+                time += 5;  // Add 5 seconds of extra time
+                if (time > 60) time = 60;
+                timerDisplay.textContent = `Time left: ${time}s`;
+            }
+        }
+
+        function freezeTime() {
+            clearInterval(timerInterval);
+            setTimeout(() => {
+                timerInterval = setInterval(updateTimer, 1000);
+            }, 5000);  // Freeze time for 5 seconds
+        }
+
+        function activateMultiplier() {
+            multiplier = 2;
+            setTimeout(() => {
+                multiplier = 1;
+            }, 10000);  // Multiplier lasts for 10 seconds
+        }
+
+        function triggerRandomChallenge() {
+            const challenges = ['speed', 'mirror', 'doublePoints'];
+            const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+
+            if (randomChallenge === 'speed') {
+                activateMultiplier();
+                displayChallengeMessage('Speed Mode: Faster Typing!');
+            } else if (randomChallenge === 'mirror') {
+                wordDisplay.style.transform = 'scaleX(-1)';  // Mirror text
+                setTimeout(() => {
+                    wordDisplay.style.transform = 'scaleX(1)';
+                }, 5000);  // Mirror mode lasts for 5 seconds
+                displayChallengeMessage('Mirror Mode: Words Reversed!');
+            } else if (randomChallenge === 'doublePoints') {
+                activateMultiplier();
+                displayChallengeMessage('Double Points Mode!');
+            }
+        }
+
+        function displayChallengeMessage(message) {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = message;
+            messageElement.classList.add('warning');
+            document.body.appendChild(messageElement);
+            setTimeout(() => {
+                document.body.removeChild(messageElement);
+            }, 3000);  // Display message for 3 seconds
+        }
+
+        function renderScoreHistory() {
+            scoreHistoryList.innerHTML = '';
+            scoreHistory.forEach(score => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `Score: ${score}`;
+                scoreHistoryList.appendChild(listItem);
+            });
+        }
 
         startButton.addEventListener('click', startGame);
+        typedWordInput.addEventListener('input', handleInput);
+        extraTimeButton.addEventListener('click', extraTime);
+        freezeTimeButton.addEventListener('click', freezeTime);
 
-        extraTimeButton.addEventListener('click', () => {
-            if (gameStarted && streak >= streakForPowerUp) {
-                time += 10;
-                if (time > 60) time = 60;
-                streak -= streakToUsePowerUp;
-                updateStreak();
-            }
-        });
+        renderScoreHistory();
+
+        // Start random challenges every 30 seconds
+        setInterval(triggerRandomChallenge, 30000);
+
     </script>
 </body>
 </html>
