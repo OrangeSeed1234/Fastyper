@@ -160,6 +160,31 @@
         #swirl-score.swirl {
             animation: swirl 2s ease forwards;
         }
+
+        /* Word Frenzy Mode Styles */
+        #frenzy-alert {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #ffeb3b;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #frenzy-alert.active {
+            opacity: 1;
+            animation: frenzy-blink 0.8s ease infinite;
+        }
+
+        @keyframes frenzy-blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -182,10 +207,14 @@
         </div>
         <audio id="correct-sound" src="right.mp3" preload="auto"></audio>
         <audio id="incorrect-sound" src="chicko.mp3" preload="auto"></audio>
+        <audio id="frenzy-sound" src="frenzy.mp3" preload="auto"></audio>
     </div>
 
     <!-- Swirling score element -->
     <div id="swirl-score">+1</div>
+
+    <!-- Frenzy alert -->
+    <div id="frenzy-alert">Word Frenzy!</div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.0/dist/confetti.browser.min.js"></script>
     <script>
@@ -201,6 +230,9 @@
         let streakForPowerUp = 5;
         let streakToUsePowerUp = 5;
 
+        let frenzyMode = false;
+        let frenzyCount = 0;
+
         const wordDisplay = document.getElementById('word');
         const typedWordInput = document.getElementById('typed-word');
         const timerDisplay = document.getElementById('timer');
@@ -214,122 +246,121 @@
         const incorrectSound = document.getElementById('incorrect-sound');
         const progressBar = document.getElementById('progress-bar');
         const swirlScore = document.getElementById('swirl-score'); // Swirl score element
+        const frenzyAlert = document.getElementById('frenzy-alert');
+        const frenzySound = document.getElementById('frenzy-sound'); // Frenzy sound
 
-        window.onload = () => {
-            updateScoreHistory();
-            highScoreDisplay.textContent = `High Score: ${highScore}`;
-            updatePowerUpButton();
-        };
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
+        displayScoreHistory();
 
         function startGame() {
-            gameStarted = true;
             score = 0;
             streak = 0;
             time = 60;
+            gameStarted = true;
             typedWordInput.value = '';
-            typedWordInput.focus();
             startButton.disabled = true;
-            generateWord();
+            extraTimeButton.disabled = false;
+            extraTimeButton.classList.remove('enabled');
+            scoreDisplay.textContent = `Score: ${score}`;
+            streakDisplay.textContent = `Streak: ${streak}`;
+            timerDisplay.textContent = `Time left: ${time}s`;
             timerInterval = setInterval(updateTimer, 1000);
+            generateWord();
+        }
+
+        function endGame() {
+            gameStarted = false;
+            startButton.disabled = false;
+            clearInterval(timerInterval);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+            saveScoreHistory(score);
+            displayScoreHistory();
         }
 
         function generateWord() {
-            currentWord = words[Math.floor(Math.random() * words.length)];
+            const randomIndex = Math.floor(Math.random() * words.length);
+            currentWord = words[randomIndex];
             wordDisplay.textContent = currentWord;
             wordDisplay.classList.remove('correct', 'incorrect');
         }
 
         function updateTimer() {
-            if (time > 0) {
-                time--;
-                timerDisplay.textContent = `Time left: ${time}s`;
-                progressBar.style.width = `${(time / 60) * 100}%`;
+            time--;
+            timerDisplay.textContent = `Time left: ${time}s`;
+            progressBar.style.width = `${(time / 60) * 100}%`;
 
-                if (time <= 10) {
-                    timerDisplay.classList.add('warning');
-                }
+            if (time <= 10) {
+                timerDisplay.classList.add('warning');
             } else {
+                timerDisplay.classList.remove('warning');
+            }
+
+            if (time <= 0) {
                 endGame();
             }
         }
 
-        function endGame() {
-            clearInterval(timerInterval);
-            gameStarted = false;
-            wordDisplay.textContent = 'Game Over!';
-            startButton.disabled = false;
-            scoreHistory.push(score);
-            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
-            updateScoreHistory();
-            updateHighScore();
-            alert(`Time's up! Your score is ${score}`);
-            confetti();
-        }
+        function updateStreak() {
+            streak++;
+            streakDisplay.textContent = `Streak: ${streak}`;
 
-        function updateScoreHistory() {
-            scoreHistoryList.innerHTML = '';
-            scoreHistory.forEach((s, index) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `Game ${index + 1}: ${s} words`;
-
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.style.marginLeft = '10px';
-                deleteButton.style.backgroundColor = '#dc3545';
-                deleteButton.style.color = 'white';
-                deleteButton.style.border = 'none';
-                deleteButton.style.padding = '5px';
-                deleteButton.style.borderRadius = '4px';
-                deleteButton.style.cursor = 'pointer';
-
-                deleteButton.addEventListener('click', () => {
-                    deleteRecord(index);
-                });
-
-                listItem.appendChild(deleteButton);
-                scoreHistoryList.appendChild(listItem);
-            });
-        }
-
-        function deleteRecord(index) {
-            scoreHistory.splice(index, 1);
-            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
-            updateScoreHistory();
-        }
-
-        function updateHighScore() {
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('highScore', highScore);
-                highScoreDisplay.textContent = `High Score: ${highScore}`;
+            if (streak >= streakForPowerUp) {
+                extraTimeButton.classList.add('enabled');
+                streakToUsePowerUp = streakForPowerUp;
             }
         }
 
         function resetStreak() {
             streak = 0;
             streakDisplay.textContent = `Streak: ${streak}`;
-            updatePowerUpButton();
         }
 
-        function updateStreak() {
-            streak++;
-            streakDisplay.textContent = `Streak: ${streak}`;
-            updatePowerUpButton();
-        }
-
-        function updatePowerUpButton() {
-            if (streak >= streakForPowerUp) {
-                extraTimeButton.classList.add('enabled');
-                extraTimeButton.disabled = false;
-            } else {
+        function useExtraTime() {
+            if (streak >= streakToUsePowerUp) {
+                time += 10;
+                streakToUsePowerUp += streakForPowerUp;
                 extraTimeButton.classList.remove('enabled');
-                extraTimeButton.disabled = true;
+                progressBar.style.width = `${(time / 60) * 100}%`;
+                timerDisplay.textContent = `Time left: ${time}s`;
             }
+        }
+
+        function saveScoreHistory(score) {
+            scoreHistory.push(score);
+            localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
+        }
+
+        function displayScoreHistory() {
+            scoreHistoryList.innerHTML = '';
+            scoreHistory.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.textContent = `Game ${index + 1}: ${score}`;
+                scoreHistoryList.appendChild(li);
+            });
+        }
+
+        function activateFrenzyMode() {
+            frenzySound.play(); // Play the frenzy sound
+            frenzyMode = true;
+            frenzyCount = 5;
+            frenzyAlert.classList.add('active');
+            wordDisplay.classList.add('frenzy');
+            setTimeout(() => {
+                frenzyMode = false;
+                frenzyAlert.classList.remove('active');
+                wordDisplay.classList.remove('frenzy');
+            }, 10000); // Frenzy lasts for 10 seconds
         }
 
         typedWordInput.addEventListener('input', () => {
             if (typedWordInput.value.trim() === currentWord && gameStarted) {
                 score++;
+                if (frenzyMode) {
+                    score++; // Double points in frenzy mode
+                }
                 updateStreak();
                 scoreDisplay.textContent = `Score: ${score}`;
                 typedWordInput.value = '';
@@ -344,6 +375,11 @@
                 swirlScore.classList.add('swirl');
                 setTimeout(() => swirlScore.classList.remove('swirl'), 2000);
 
+                // Check if we should activate Frenzy Mode
+                if (streak % 10 === 0) {
+                    activateFrenzyMode();
+                }
+
             } else if (typedWordInput.value.trim() !== currentWord && typedWordInput.value.trim().length >= currentWord.length) {
                 wordDisplay.classList.add('incorrect');
                 document.body.classList.add('flash-bg-incorrect');
@@ -354,15 +390,7 @@
         });
 
         startButton.addEventListener('click', startGame);
-
-        extraTimeButton.addEventListener('click', () => {
-            if (gameStarted && streak >= streakForPowerUp) {
-                time += 10;
-                if (time > 60) time = 60;
-                streak -= streakToUsePowerUp;
-                updateStreak();
-            }
-        });
+        extraTimeButton.addEventListener('click', useExtraTime);
     </script>
 </body>
 </html>
